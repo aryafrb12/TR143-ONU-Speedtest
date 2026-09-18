@@ -115,7 +115,7 @@ Verifikasi: `curl -X PUT --data-binary @/etc/hostname http://<IP-SERVER>/upload/
 
 ## Tulisan lengkap
 
-Latar belakang, penjelasan TR-143, dan jebakan yang ditemui selama membangunnya: [farabingonfig.wordpress.com](https://farabingonfig.wordpress.com)
+Latar belakang, penjelasan TR-143, dan jebakan yang ditemui selama membangunnya: (https://farabingonfig.com/index.php/2026/09/18/bikin-speedtest-onu-sendiri-pakai-tr-143-di-genieacs/)
 
 ## Lisensi
 
