@@ -4,8 +4,6 @@ Dashboard uji kecepatan ONU lewat TR-143, terintegrasi langsung dengan GenieACS 
 
 Pilih ONU, klik sekali, dapat angka unduh dan unggah dalam satu rangkaian — tanpa datang ke lokasi.
 
-![screenshot](docs/screenshot.png)
-
 ## Fitur
 
 - Uji unduh dan unggah berurutan otomatis, atau salah satu saja
