@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uji Kecepatan ONU — MAHAMARTA</title>
+<style>
+  :root{
+    --bg:#0d1418;
+    --panel:#141f26;
+    --panel-2:#1b2932;
+    --line:#263a45;
+    --ink:#e4eef3;
+    --ink-dim:#8199a6;
+    --ink-faint:#5a6f7c;
+    --photon:#43d6c4;
+    --violet:#8b7cf0;
+    --amber:#f0b641;
+    --red:#e6604b;
+    --num: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ============ gerbang login ============ */
+  .gate{
+    position:fixed;inset:0;z-index:50;
+    background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .gate[hidden]{display:none}
+  .gate::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(760px 420px at 50% -8%, rgba(67,214,196,.13), transparent 65%),
+      radial-gradient(520px 340px at 92% 108%, rgba(139,124,240,.10), transparent 62%);
+  }
+  .gate-card{
+    position:relative;width:100%;max-width:372px;
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:34px 30px 28px;
+    box-shadow:0 22px 60px rgba(0,0,0,.45);
+  }
+  .brand{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:6px}
+  .brand img{max-width:172px;max-height:76px;width:auto;height:auto;display:block}
+  .brand-fallback{
+    font-size:23px;font-weight:700;letter-spacing:.16em;
+    color:var(--photon);display:none;
+  }
+  .brand-fallback.show{display:block}
+  .gate-sub{
+    text-align:center;color:var(--ink-faint);font-size:12.5px;
+    margin:0 0 26px;font-family:var(--num);
+  }
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;color:var(--ink-dim);margin-bottom:6px}
+  .field input{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    border-radius:8px;padding:11px 13px;font-family:var(--num);font-size:14px;
+  }
+  .field input:focus{outline:none;border-color:var(--photon);box-shadow:0 0 0 3px rgba(67,214,196,.12)}
+
+  .gate-btn{
+    width:100%;margin-top:8px;background:var(--photon);color:#06211e;
+    border:0;border-radius:8px;padding:12px;
+    font-family:inherit;font-size:15px;font-weight:650;cursor:pointer;
+  }
+  .gate-btn:hover{filter:brightness(1.1)}
+  .gate-btn:focus-visible{outline:2px solid var(--photon);outline-offset:3px}
+  .gate-btn:disabled{background:var(--panel-2);color:var(--ink-faint);cursor:not-allowed;filter:none}
+
+  .gate-msg{
+    min-height:20px;margin:13px 0 0;font-size:12.5px;
+    color:var(--red);text-align:center;
+  }
+  .gate-msg.busy{color:var(--ink-faint)}
+  .gate-foot{
+    margin:22px 0 0;text-align:center;font-size:11.5px;
+    color:var(--ink-faint);font-family:var(--num);
+  }
+
+  /* ============ aplikasi ============ */
+  .shell{max-width:1120px;margin:0 auto;padding:28px 20px 64px}
+  .shell[hidden]{display:none}
+
+  header.top{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:26px;
+  }
+  header.top img.mark{max-height:30px;width:auto;display:block}
+  header.top img.mark[hidden]{display:none}
+  header.top h1{font-size:19px;font-weight:620;letter-spacing:-.015em;margin:0}
+  .host{font-family:var(--num);font-size:12.5px;color:var(--ink-faint)}
+  .link-status{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:none}
+  .dot.ok{background:var(--photon);box-shadow:0 0 0 3px rgba(67,214,196,.15)}
+  .dot.bad{background:var(--red);box-shadow:0 0 0 3px rgba(230,96,75,.15)}
+  .whoami{font-family:var(--num);font-size:12px;color:var(--ink-faint)}
+  .logout{
+    background:none;border:1px solid var(--line);color:var(--ink-dim);
+    border-radius:6px;padding:4px 11px;font-family:inherit;font-size:12.5px;cursor:pointer;
+  }
+  .logout:hover{color:var(--red);border-color:var(--red)}
+  .logout:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+  .grid{display:grid;grid-template-columns:330px 1fr;gap:24px;align-items:start}
+  @media (max-width:860px){ .grid{grid-template-columns:1fr} }
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+
+  .rail{overflow:hidden}
+  .rail-head{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}
+  .rail-head h2{margin:0;font-size:14px;font-weight:600}
+  .count{font-family:var(--num);font-size:12px;color:var(--ink-faint)}
+  .icon-btn{
+    margin-left:auto;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--ink-dim);border-radius:6px;padding:4px 10px;
+    font-size:12.5px;font-family:inherit;cursor:pointer;
+  }
+  .icon-btn:hover{color:var(--ink);border-color:var(--photon)}
+  .icon-btn:focus-visible{outline:2px solid var(--photon);outline-offset:2px}
+  .rail-search{padding:11px 15px;border-bottom:1px solid var(--line)}
+  .rail-search input{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    border-radius:6px;padding:7px 10px;font-family:inherit;font-size:13.5px;
+  }
+  .rail-search input:focus{outline:none;border-color:var(--photon)}
+  .rail-list{max-height:460px;overflow-y:auto}
+  .dev{
+    display:block;width:100%;text-align:left;background:none;border:0;
+    border-bottom:1px solid var(--line);padding:11px 15px;cursor:pointer;
+    font-family:inherit;color:inherit;border-left:3px solid transparent;
+  }
+  .dev:hover{background:var(--panel-2)}
+  .dev:focus-visible{outline:2px solid var(--photon);outline-offset:-2px}
+  .dev[aria-current="true"]{background:var(--panel-2);border-left-color:var(--photon)}
+  .dev-name{font-family:var(--num);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dev-meta{font-size:11.5px;color:var(--ink-faint);margin-top:2px;display:flex;gap:8px}
+  .dev-meta .stale{color:var(--amber)}
+  .rail-empty{padding:26px 15px;color:var(--ink-faint);font-size:13.5px}
+
+  .stage{padding:20px 20px 24px;display:flex;flex-direction:column;align-items:center}
+  .modes{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px;margin-bottom:12px}
+  .modes button{
+    background:none;border:0;color:var(--ink-dim);font-family:inherit;font-size:13.5px;
+    padding:6px 18px;border-radius:6px;cursor:pointer;
+  }
+  .modes button[aria-pressed="true"]{background:var(--panel-2);color:var(--ink)}
+  .modes button:focus-visible{outline:2px solid var(--photon);outline-offset:1px}
+  .modes button:disabled{cursor:not-allowed;opacity:.45}
+
+  .stage-target{
+    font-family:var(--num);font-size:12.5px;color:var(--ink-dim);
+    margin-bottom:2px;min-height:19px;text-align:center;word-break:break-all;
+  }
+  svg.gauge{width:100%;max-width:430px;height:auto;display:block}
+  .tick-lbl{font-family:var(--num);font-size:11px;fill:var(--ink-faint)}
+  .read-num{font-family:var(--num);font-weight:600;fill:var(--ink)}
+  .read-unit{font-family:var(--sans);font-size:14px;fill:var(--ink-dim)}
+  .read-cap{font-family:var(--sans);font-size:12.5px;fill:var(--ink-faint)}
+  #track{stroke:var(--panel-2)}
+  #glow{filter:blur(7px);opacity:0;transition:opacity .5s}
+  #glow.lit{opacity:.5}
+  #needle line{stroke:var(--ink)}
+  @media (prefers-reduced-motion:reduce){ #glow{transition:none} }
+
+  .results{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);
+           border-radius:9px;overflow:hidden;width:100%;max-width:400px;margin-top:6px}
+  .results[hidden]{display:none}
+  .res{flex:1;background:var(--panel-2);padding:10px 14px;opacity:.45;transition:opacity .3s}
+  .res.filled,.res.active{opacity:1}
+  .res.active{box-shadow:inset 0 -2px 0 currentColor}
+  .res.down{color:var(--photon)}
+  .res.up{color:var(--violet)}
+  .res-k{display:block;font-size:11.5px;color:var(--ink-faint)}
+  .res-v{display:block;font-family:var(--num);font-size:21px;font-weight:600;color:var(--ink);margin-top:1px}
+  .res-v small{font-size:12px;font-weight:400;color:var(--ink-dim);margin-left:3px}
+
+  .actions{display:flex;gap:10px;align-items:center;margin-top:16px}
+  .go{
+    background:var(--photon);color:#06211e;border:0;border-radius:8px;
+    padding:12px 40px;font-family:inherit;font-size:15px;font-weight:650;cursor:pointer;
+  }
+  .go:hover{filter:brightness(1.1)}
+  .go:focus-visible{outline:2px solid var(--photon);outline-offset:3px}
+  .go:disabled{background:var(--panel-2);color:var(--ink-faint);cursor:not-allowed;filter:none}
+  .stop{
+    background:none;color:var(--ink-dim);border:1px solid var(--line);
+    border-radius:8px;padding:12px 22px;font-family:inherit;font-size:14px;cursor:pointer;
+  }
+  .stop:hover{color:var(--red);border-color:var(--red)}
+  .stop:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+  .stop[hidden]{display:none}
+
+  .status{margin-top:14px;min-height:22px;font-size:13.5px;color:var(--ink-dim);text-align:center;max-width:470px}
+  .status.err{color:var(--red)}
+  .status.warn{color:var(--amber)}
+  .status b{color:var(--ink);font-weight:600}
+
+  table.detail{
+    margin-top:20px;width:100%;max-width:560px;border-collapse:collapse;
+    border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px;
+  }
+  table.detail[hidden]{display:none}
+  table.detail th{
+    text-align:left;font-weight:500;font-size:11.5px;color:var(--ink-faint);
+    background:var(--panel-2);padding:8px 12px;border-bottom:1px solid var(--line);
+  }
+  table.detail td{padding:9px 12px;border-bottom:1px solid var(--line);font-family:var(--num);color:var(--ink)}
+  table.detail tr:last-child td{border-bottom:0}
+  table.detail td.dir{font-family:var(--sans)}
+  table.detail td.dir.down{color:var(--photon)}
+  table.detail td.dir.up{color:var(--violet)}
+  table.detail td.fail{color:var(--red)}
+
+  .log{
+    margin-top:24px;font-family:var(--num);font-size:12px;color:var(--ink-faint);
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:12px 14px;max-height:170px;overflow-y:auto;
+    white-space:pre-wrap;word-break:break-word;width:100%;
+  }
+  .log .t{color:var(--ink-dim)}
+  .log .e{color:var(--red)}
+  .log .s{color:var(--photon)}
+  .log .h{color:var(--ink)}
+
+  .setup{margin-top:26px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+  .setup summary{padding:12px 15px;cursor:pointer;font-size:13.5px;color:var(--ink-dim)}
+  .setup summary:hover{color:var(--ink)}
+  .setup .body{padding:0 15px 16px;font-size:13.5px;color:var(--ink-dim);max-width:75ch}
+  .setup pre{
+    background:var(--bg);border:1px solid var(--line);border-radius:6px;
+    padding:11px 13px;overflow-x:auto;font-family:var(--num);font-size:12px;color:var(--ink);
+  }
+  .setup code{font-family:var(--num);font-size:12.5px;color:var(--photon)}
+  .setup label{display:block;margin:12px 0 5px;color:var(--ink)}
+  .setup input{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    border-radius:6px;padding:7px 10px;font-family:var(--num);font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ gerbang login ============ -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="brand">
+      <img id="gateLogo" src="mahamarta.png" alt="MAHAMARTA">
+      <span class="brand-fallback" id="gateFallback">MAHAMARTA</span>
+    </div>
+    <p class="gate-sub">Uji Kecepatan ONU</p>
+
+    <div class="field">
+      <label for="userInput">Pengguna</label>
+      <input type="text" id="userInput" autocomplete="username" autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label for="passInput">Sandi</label>
+      <input type="password" id="passInput" autocomplete="current-password">
+    </div>
+
+    <button class="gate-btn" id="gateBtn">Masuk</button>
+    <p class="gate-msg" id="gateMsg"></p>
+    <p class="gate-foot" id="gateFoot"></p>
+  </div>
+</div>
+
+<!-- ============ aplikasi ============ -->
+<div class="shell" id="shell" hidden>
+
+  <header class="top">
+    <img class="mark" id="topLogo" src="mahamarta.png" alt="MAHAMARTA">
+    <h1>Uji kecepatan ONU</h1>
+    <span class="host" id="hostLabel"></span>
+    <div class="link-status">
+      <span class="dot" id="acsDot"></span>
+      <span id="acsText">Menghubungkan…</span>
+      <span class="whoami" id="whoami"></span>
+      <button class="logout" id="logoutBtn">Keluar</button>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <section class="panel rail">
+      <div class="rail-head">
+        <h2>Perangkat</h2>
+        <span class="count" id="devCount"></span>
+        <button class="icon-btn" id="reloadBtn">Muat ulang</button>
+      </div>
+      <div class="rail-search">
+        <input type="search" id="filterInput" placeholder="Cari serial atau ID…" autocomplete="off">
+      </div>
+      <div class="rail-list" id="devList">
+        <p class="rail-empty">Memuat daftar perangkat…</p>
+      </div>
+    </section>
+
+    <section class="panel stage">
+      <div class="modes" role="group" aria-label="Arah uji">
+        <button type="button" id="modeBoth" aria-pressed="true">Keduanya</button>
+        <button type="button" id="modeDown" aria-pressed="false">Unduh saja</button>
+        <button type="button" id="modeUp"   aria-pressed="false">Unggah saja</button>
+      </div>
+
+      <div class="stage-target" id="targetLabel">Pilih perangkat di sebelah kiri</div>
+
+      <svg class="gauge" id="gauge" viewBox="0 0 440 372" role="img" aria-labelledby="gaugeTitle">
+        <title id="gaugeTitle">Penunjuk kecepatan</title>
+        <g id="ticks"></g>
+        <path id="track" fill="none" stroke-width="13" stroke-linecap="round"></path>
+        <path id="glow" fill="none" stroke="#43d6c4" stroke-width="14" stroke-linecap="round"></path>
+        <path id="fill" fill="none" stroke="#43d6c4" stroke-width="13" stroke-linecap="round"></path>
+        <g id="needle"><line x1="220" y1="210" x2="220" y2="78" stroke-width="3" stroke-linecap="round"></line></g>
+        <circle cx="220" cy="210" r="8" fill="#141f26" stroke="#263a45" stroke-width="2"></circle>
+        <text id="readNum" class="read-num" x="220" y="176" text-anchor="middle" font-size="58">—</text>
+        <text id="readUnit" class="read-unit" x="220" y="200" text-anchor="middle">Mbps</text>
+        <text id="readCap" class="read-cap" x="220" y="258" text-anchor="middle"></text>
+      </svg>
+
+      <div class="results" id="results" hidden>
+        <div class="res down" id="resDown"><span class="res-k">Unduh</span><span class="res-v" id="resDownV">—</span></div>
+        <div class="res up"   id="resUp"><span class="res-k">Unggah</span><span class="res-v" id="resUpV">—</span></div>
+      </div>
+
+      <div class="actions">
+        <button class="go" id="goBtn" disabled>Mulai uji</button>
+        <button class="stop" id="stopBtn" hidden>Batalkan</button>
+      </div>
+      <p class="status" id="statusLine">Pilih ONU, lalu mulai uji.</p>
+
+      <table class="detail" id="detail" hidden>
+        <thead><tr><th>Arah</th><th>Status</th><th>Volume</th><th>Durasi</th><th>Kecepatan</th></tr></thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+
+      <div class="log" id="log" aria-live="polite"></div>
+    </section>
+
+  </div>
+
+  <details class="setup">
+    <summary>Pengaturan &amp; syarat pemasangan</summary>
+    <div class="body">
+      <p>Sandi diperiksa oleh nginx, bukan oleh halaman ini. Pasang sekali di server:</p>
+      <pre>apt install -y apache2-utils
+htpasswd -c /etc/nginx/.htpasswd farabi</pre>
+      <p>Lalu di blok <code>location /nbi/</code>:</p>
+      <pre>auth_basic "MAHAMARTA";
+auth_basic_user_file /etc/nginx/.htpasswd;</pre>
+      <p>Menambah operator lain: <code>htpasswd /etc/nginx/.htpasswd namabaru</code> — tanpa <code>-c</code>, kalau pakai <code>-c</code> file lama ditimpa.</p>
+      <p>Logo: taruh <code>mahamarta.png</code> atau <code>mahamarta.svg</code> di folder yang sama dengan halaman ini.</p>
+      <p>Untuk unggah, server harus menerima PUT lewat modul DAV:</p>
+      <pre>location /upload/ {
+    alias /var/www/upload/;
+    dav_methods PUT DELETE;
+    client_max_body_size 0;
+    client_body_temp_path /var/tmp/nginx_up;
+    create_full_put_path on;
+    dav_access user:rw group:rw all:r;
+}</pre>
+
+      <label for="nbiInput">Alamat NBI</label>
+      <input type="text" id="nbiInput" value="/nbi">
+      <label for="tagInput">Tag pemicu unduh</label>
+      <input type="text" id="tagInput" value="speedtest">
+      <label for="tagUpInput">Tag pemicu unggah</label>
+      <input type="text" id="tagUpInput" value="speedtestup">
+      <label for="timeoutInput">Batas tunggu tiap arah (detik)</label>
+      <input type="text" id="timeoutInput" value="900">
+      <label for="gapInput">Jeda antar arah (detik)</label>
+      <input type="text" id="gapInput" value="6">
+    </div>
+  </details>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var cfg = { nbi:"/nbi", tag:"speedtest", tagUp:"speedtestup", wait:"speedtestwait",
+              timeout:900, gap:6 };
+
+  var el = function(id){ return document.getElementById(id); };
+
+  // Kredensial hanya hidup di memori selama tab terbuka. Tidak ditulis ke
+  // penyimpanan apa pun, dan tidak ada sandi yang tertanam di berkas ini.
+  var AUTH = null, WHO = null;
+
+  var devices=[], selected=null, running=false, plan="both";
+  var pollTimer=null, tickTimer=null, sweepRAF=null, countRAF=null, gapTimer=null;
+  var activeBase=null;
+  var booted = false;
+
+  /* ---------- logo ---------- */
+  function wireLogo(img, fallbackEl){
+    var tried = false;
+    img.addEventListener("error", function(){
+      if (!tried){ tried = true; img.src = "mahamarta.svg"; return; }
+      img.hidden = true;
+      img.style.display = "none";
+      if (fallbackEl) fallbackEl.classList.add("show");
+    });
+  }
+  wireLogo(el("gateLogo"), el("gateFallback"));
+  wireLogo(el("topLogo"), null);
+
+  /* ---------- gerbang ---------- */
+  el("gateFoot").textContent = location.host || "";
+
+  function gateMsg(text, busy){
+    var m = el("gateMsg");
+    m.className = "gate-msg" + (busy ? " busy" : "");
+    m.textContent = text || "";
+  }
+
+  function attemptLogin(){
+    var u = el("userInput").value.trim();
+    var p = el("passInput").value;
+    if (!u || !p){ gateMsg("Isi pengguna dan sandi."); return; }
+
+    var header = "Basic " + btoa(u + ":" + p);
+    el("gateBtn").disabled = true;
+    gateMsg("Memeriksa…", true);
+
+    fetch(cfg.nbi + "/devices/?projection=_id", { headers: { "Authorization": header } })
+      .then(function(r){
+        if (r.status === 401 || r.status === 403){
+          gateMsg("Pengguna atau sandi salah.");
+          el("passInput").value = "";
+          el("passInput").focus();
+          el("gateBtn").disabled = false;
+          return;
+        }
+        if (!r.ok){
+          gateMsg("Server menjawab HTTP " + r.status + ". Periksa proksi NBI.");
+          el("gateBtn").disabled = false;
+          return;
+        }
+        AUTH = header; WHO = u;
+        el("gateBtn").disabled = false;
+        gateMsg("");
+        el("passInput").value = "";
+        enter();
+      })
+      .catch(function(){
+        gateMsg("Server tidak terjangkau.");
+        el("gateBtn").disabled = false;
+      });
+  }
+
+  el("gateBtn").addEventListener("click", attemptLogin);
+  ["userInput","passInput"].forEach(function(id){
+    el(id).addEventListener("keydown", function(e){ if (e.key === "Enter") attemptLogin(); });
+  });
+
+  function enter(){
+    el("gate").hidden = true;
+    el("shell").hidden = false;
+    el("whoami").textContent = WHO;
+    el("hostLabel").textContent = location.host || "(file lokal)";
+    if (!booted){ booted = true; loadDevices(); }
+  }
+
+  el("logoutBtn").addEventListener("click", function(){
+    if (running){
+      running = false;
+      clearTimeout(pollTimer); clearTimeout(gapTimer); clearInterval(tickTimer);
+      if (selected) cleanupTags(selected);
+    }
+    AUTH = null; WHO = null; selected = null; devices = []; booted = false;
+    el("shell").hidden = true;
+    el("gate").hidden = false;
+    el("userInput").value = ""; el("passInput").value = "";
+    gateMsg("");
+    el("userInput").focus();
+  });
+
+  el("userInput").focus();
+
+  /* ---------- log & status ---------- */
+  function log(msg, kind){
+    var box = el("log"), row = document.createElement("div");
+    var s = document.createElement("span");
+    s.className = "t"; s.textContent = new Date().toTimeString().slice(0,8) + "  ";
+    row.appendChild(s);
+    var b = document.createElement("span");
+    if (kind) b.className = kind;
+    b.textContent = msg;
+    row.appendChild(b);
+    box.appendChild(row); box.scrollTop = box.scrollHeight;
+  }
+  function status(msg, kind){
+    var s = el("statusLine");
+    s.className = "status" + (kind ? " " + kind : "");
+    s.innerHTML = msg;
+  }
+
+  ["nbiInput","tagInput","tagUpInput","timeoutInput","gapInput"].forEach(function(id){
+    el(id).addEventListener("change", function(){
+      cfg.nbi     = el("nbiInput").value.replace(/\/+$/,"") || "/nbi";
+      cfg.tag     = el("tagInput").value.trim() || "speedtest";
+      cfg.tagUp   = el("tagUpInput").value.trim() || "speedtestup";
+      cfg.timeout = Math.max(20, parseInt(el("timeoutInput").value,10) || 900);
+      cfg.gap     = Math.max(2,  parseInt(el("gapInput").value,10) || 6);
+      log("Pengaturan diperbarui.");
+    });
+  });
+
+  /* ---------- gauge ---------- */
+  var CX=220, CY=210, R=160, A0=138, SWEEP=264;
+  var STOPS=[0,1,5,10,20,50,100,250,500,750,1000];
+
+  function frac(v){
+    if (!(v>0)) return 0;
+    if (v >= STOPS[STOPS.length-1]) return 1;
+    for (var i=0;i<STOPS.length-1;i++){
+      if (v <= STOPS[i+1]) return (i + (v-STOPS[i])/(STOPS[i+1]-STOPS[i])) / (STOPS.length-1);
+    }
+    return 1;
+  }
+  function polar(a,r){ var d=a*Math.PI/180; return [CX+r*Math.cos(d), CY+r*Math.sin(d)]; }
+  function arcD(a0,a1,r){
+    var p0=polar(a0,r), p1=polar(a1,r), large=(a1-a0)>180?1:0;
+    return "M "+p0[0].toFixed(2)+" "+p0[1].toFixed(2)+
+           " A "+r+" "+r+" 0 "+large+" 1 "+p1[0].toFixed(2)+" "+p1[1].toFixed(2);
+  }
+  el("track").setAttribute("d", arcD(A0, A0+SWEEP, R));
+
+  (function ticks(){
+    var g=el("ticks"), NS="http://www.w3.org/2000/svg";
+    STOPS.forEach(function(v,i){
+      var a=A0+(i/(STOPS.length-1))*SWEEP, o=polar(a,R-11), n=polar(a,R-21);
+      var ln=document.createElementNS(NS,"line");
+      ln.setAttribute("x1",o[0].toFixed(1)); ln.setAttribute("y1",o[1].toFixed(1));
+      ln.setAttribute("x2",n[0].toFixed(1)); ln.setAttribute("y2",n[1].toFixed(1));
+      ln.setAttribute("stroke","#3c5462"); ln.setAttribute("stroke-width","2");
+      g.appendChild(ln);
+      var lp=polar(a,R-36), tx=document.createElementNS(NS,"text");
+      tx.setAttribute("class","tick-lbl");
+      tx.setAttribute("x",lp[0].toFixed(1)); tx.setAttribute("y",(lp[1]+4).toFixed(1));
+      tx.setAttribute("text-anchor","middle"); tx.textContent=v;
+      g.appendChild(tx);
+    });
+  })();
+
+  function paint(f){
+    f = Math.max(0, Math.min(1, f));
+    var a = A0 + f*SWEEP;
+    el("needle").setAttribute("transform","rotate("+(a-270).toFixed(2)+" "+CX+" "+CY+")");
+    var d = arcD(A0, Math.max(A0+0.01, a), R);
+    el("fill").setAttribute("d", d);
+    el("glow").setAttribute("d", d);
+  }
+  paint(0);
+
+  var COLOR = { down:"#43d6c4", up:"#8b7cf0" };
+  function applyAccent(c){ el("fill").setAttribute("stroke",c); el("glow").setAttribute("stroke",c); }
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function startSweep(){
+    stopSweep();
+    if (reduce){ paint(0.12); return; }
+    var t0 = performance.now();
+    (function step(now){
+      if (!running) return;
+      var t=(now-t0)/1000, ph=(t%3.4)/3.4;
+      var tri = ph<0.5 ? ph*2 : (1-ph)*2;
+      var e = tri*tri*(3-2*tri);
+      paint(0.06 + e*0.80);
+      sweepRAF = requestAnimationFrame(step);
+    })(t0);
+  }
+  function stopSweep(){ if (sweepRAF){ cancelAnimationFrame(sweepRAF); sweepRAF=null; } }
+
+  function settleTo(target){
+    stopSweep();
+    if (countRAF) cancelAnimationFrame(countRAF);
+    var num = el("readNum"), fT = frac(target), fF = 0;
+    var m = /rotate\(([-\d.]+)/.exec(el("needle").getAttribute("transform") || "");
+    if (m) fF = ((parseFloat(m[1]) + 270) - A0) / SWEEP;
+    if (reduce){
+      paint(fT);
+      num.textContent = target >= 100 ? target.toFixed(0) : target.toFixed(2);
+      el("glow").classList.add("lit"); return;
+    }
+    var t0 = performance.now(), dur = 1250;
+    (function step(now){
+      var p = Math.min(1,(now-t0)/dur);
+      var c1 = 1.05, c3 = c1+1;
+      var back = 1 + c3*Math.pow(p-1,3) + c1*Math.pow(p-1,2);
+      paint(fF + (fT-fF)*back);
+      var e = 1-Math.pow(1-p,3), v = target*e;
+      num.textContent = v >= 100 ? v.toFixed(0) : v.toFixed(1);
+      if (p < 1) countRAF = requestAnimationFrame(step);
+      else {
+        paint(fT);
+        num.textContent = target >= 100 ? target.toFixed(0) : target.toFixed(2);
+        el("glow").classList.add("lit");
+      }
+    })(t0);
+  }
+
+  /* ---------- arah ---------- */
+  var DIR = {
+    down:{
+      label:"Unduh", unit:"Mbps unduh", verb:"menarik",
+      tag:function(){ return cfg.tag; },
+      node:function(root){ return root==="InternetGatewayDevice"
+        ? "InternetGatewayDevice.DownloadDiagnostics"
+        : "Device.IP.Diagnostics.DownloadDiagnostics"; },
+      bytes:["TestBytesReceived","TotalBytesReceived"],
+      total:"TotalBytesReceived"
+    },
+    up:{
+      label:"Unggah", unit:"Mbps unggah", verb:"mengirim",
+      tag:function(){ return cfg.tagUp; },
+      node:function(root){ return root==="InternetGatewayDevice"
+        ? "InternetGatewayDevice.UploadDiagnostics"
+        : "Device.IP.Diagnostics.UploadDiagnostics"; },
+      bytes:["TestBytesSent","TotalBytesSent","TestFileLength"],
+      total:"TotalBytesSent"
+    }
+  };
+  function phases(){ return plan === "both" ? ["down","up"] : [plan]; }
+
+  function setPlan(p){
+    if (running || plan === p) return;
+    plan = p;
+    el("modeBoth").setAttribute("aria-pressed", String(p==="both"));
+    el("modeDown").setAttribute("aria-pressed", String(p==="down"));
+    el("modeUp").setAttribute("aria-pressed", String(p==="up"));
+    resetAll();
+    if (selected) status("Siap menguji.");
+  }
+  el("modeBoth").addEventListener("click", function(){ setPlan("both"); });
+  el("modeDown").addEventListener("click", function(){ setPlan("down"); });
+  el("modeUp").addEventListener("click",   function(){ setPlan("up"); });
+
+  /* ---------- NBI ---------- */
+  function nbi(path, opts){
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    if (AUTH) opts.headers["Authorization"] = AUTH;
+    return fetch(cfg.nbi + path, opts).then(function(r){
+      if (r.status === 401 || r.status === 403){
+        sessionExpired();
+        throw new Error("Sesi berakhir");
+      }
+      if (!r.ok) return r.text().then(function(t){
+        throw new Error("HTTP " + r.status + (t ? " — " + t.slice(0,180) : ""));
+      });
+      var ct = r.headers.get("content-type") || "";
+      return ct.indexOf("json") >= 0 ? r.json() : r.text();
+    });
+  }
+
+  function sessionExpired(){
+    running = false;
+    clearTimeout(pollTimer); clearTimeout(gapTimer); clearInterval(tickTimer);
+    AUTH = null;
+    el("shell").hidden = true;
+    el("gate").hidden = false;
+    booted = false;
+    gateMsg("Sesi berakhir. Masuk lagi.");
+    el("userInput").focus();
+  }
+
+  function q(o){ return encodeURIComponent(JSON.stringify(o)); }
+  function devPath(id){ return "/devices/" + encodeURIComponent(id); }
+  function leaf(o,p){
+    var c=o, a=p.split(".");
+    for (var i=0;i<a.length;i++){ if (c==null||typeof c!=="object") return null; c=c[a[i]]; }
+    return c || null;
+  }
+  function val(o,p){ var n=leaf(o,p); return n ? n._value : undefined; }
+  function stampOf(o,p){ var n=leaf(o,p); return n ? n._timestamp : null; }
+  function rootOf(d){ return d.InternetGatewayDevice ? "InternetGatewayDevice" : "Device"; }
+  function parseTime(v){
+    if (v==null) return null;
+    if (typeof v === "number") return v;
+    var t = Date.parse(v); return isNaN(t) ? null : t;
+  }
+  function fmtBytes(b){
+    if (b==null||isNaN(b)) return "—";
+    if (b >= 1048576) return (b/1048576).toFixed(2)+" MiB";
+    if (b >= 1024) return (b/1024).toFixed(1)+" KiB";
+    return b+" B";
+  }
+  function sleep(ms){ return new Promise(function(r){ gapTimer = setTimeout(r, ms); }); }
+
+  /* ---------- daftar perangkat ---------- */
+  function loadDevices(){
+    el("devList").innerHTML = '<p class="rail-empty">Memuat daftar perangkat…</p>';
+    var proj = ["_id","_lastInform","_deviceId._SerialNumber","_deviceId._ProductClass",
+                "InternetGatewayDevice.DeviceInfo.UpTime","Device.DeviceInfo.UpTime"].join(",");
+    nbi("/devices/?projection=" + encodeURIComponent(proj))
+      .then(function(list){
+        devices = Array.isArray(list) ? list : [];
+        el("acsDot").className = "dot ok";
+        el("acsText").textContent = "ACS terhubung";
+        el("devCount").textContent = devices.length + " unit";
+        log("Terhubung ke NBI, " + devices.length + " perangkat terdaftar.", "s");
+        renderDevices();
+      })
+      .catch(function(err){
+        if (err.message === "Sesi berakhir") return;
+        el("acsDot").className = "dot bad";
+        el("acsText").textContent = "ACS tidak terjangkau";
+        el("devList").innerHTML = '<p class="rail-empty">Tidak bisa membaca daftar. Periksa proksi di nginx.</p>';
+        log("Gagal membaca daftar perangkat: " + err.message, "e");
+      });
+  }
+
+  function renderDevices(){
+    var needle = el("filterInput").value.trim().toLowerCase(), box = el("devList");
+    box.innerHTML = "";
+    var shown = devices.filter(function(d){
+      if (!needle) return true;
+      var sn = (d._deviceId && d._deviceId._SerialNumber) || "";
+      return (d._id + " " + sn).toLowerCase().indexOf(needle) >= 0;
+    });
+    if (!shown.length){ box.innerHTML = '<p class="rail-empty">Tidak ada yang cocok.</p>'; return; }
+    shown.forEach(function(d){
+      var sn = (d._deviceId && d._deviceId._SerialNumber) || "—";
+      var pc = (d._deviceId && d._deviceId._ProductClass) || "";
+      var last = d._lastInform ? new Date(d._lastInform) : null;
+      var mins = last ? (Date.now()-last.getTime())/60000 : Infinity;
+      var b = document.createElement("button");
+      b.className = "dev"; b.type = "button";
+      b.setAttribute("aria-current", selected && selected._id === d._id ? "true" : "false");
+      var n = document.createElement("div"); n.className="dev-name"; n.textContent=sn; b.appendChild(n);
+      var m = document.createElement("div"); m.className="dev-meta";
+      var s1 = document.createElement("span"); s1.textContent = pc || rootOf(d);
+      var s2 = document.createElement("span");
+      if (mins === Infinity){ s2.textContent="belum pernah inform"; s2.className="stale"; }
+      else if (mins < 60) s2.textContent = Math.round(mins)+" mnt lalu";
+      else if (mins < 1440) s2.textContent = Math.round(mins/60)+" jam lalu";
+      else { s2.textContent = Math.round(mins/1440)+" hari lalu"; s2.className="stale"; }
+      m.appendChild(s1); m.appendChild(s2); b.appendChild(m);
+      b.addEventListener("click", function(){ select(d); });
+      box.appendChild(b);
+    });
+  }
+  el("filterInput").addEventListener("input", renderDevices);
+  el("reloadBtn").addEventListener("click", loadDevices);
+
+  function resetAll(){
+    stopSweep();
+    if (countRAF){ cancelAnimationFrame(countRAF); countRAF=null; }
+    el("glow").classList.remove("lit");
+    applyAccent(COLOR.down);
+    paint(0);
+    el("readNum").textContent = "—";
+    el("readUnit").textContent = "Mbps";
+    el("readCap").textContent = "";
+    el("results").hidden = true;
+    el("resDownV").textContent = "—"; el("resUpV").textContent = "—";
+    el("resDown").className = "res down"; el("resUp").className = "res up";
+    el("detail").hidden = true;
+    el("detailBody").innerHTML = "";
+  }
+
+  function select(d){
+    if (running) return;
+    selected = d;
+    renderDevices();
+    resetAll();
+    el("log").innerHTML = "";
+    var sn = (d._deviceId && d._deviceId._SerialNumber) || d._id;
+    el("targetLabel").textContent = sn + "  ·  " + d._id;
+    el("goBtn").disabled = false;
+    status("Siap menguji.");
+    checkSupport(d);
+  }
+
+  function checkSupport(d){
+    var root = rootOf(d), missing = [], want = phases().map(function(p){ return DIR[p].node(root); });
+    nbi("/devices/?query=" + q({_id:d._id}) + "&projection=" + encodeURIComponent(want.join(",")))
+      .then(function(r){
+        var dev = r && r[0];
+        want.forEach(function(nd,i){ if (!dev || !leaf(dev,nd)) missing.push(phases()[i]); });
+        if (missing.length){
+          var names = missing.map(function(p){ return DIR[p].label.toLowerCase(); }).join(" dan ");
+          status("ONU ini belum pernah melaporkan node diagnostik " + names +
+                 ". Kemungkinan tidak mendukung arah itu.", "warn");
+          missing.forEach(function(p){ log("Node " + DIR[p].node(root) + " belum ada.", "e"); });
+        }
+      })
+      .catch(function(){});
+  }
+
+  /* ---------- eksekusi ---------- */
+  var ERRORS = {
+    "Error_CannotResolveHostName":"Nama host tidak bisa diterjemahkan ONU. Pakai alamat IP.",
+    "Error_NoRouteToHost":"ONU tidak punya rute ke server uji. Periksa firewall antar-VLAN.",
+    "Error_InitConnectionFailed":"ONU gagal membuka koneksi. Biasanya parameter Interface salah, atau portnya tertutup.",
+    "Error_NoResponse":"Server uji tidak menjawab. Pastikan nginx hidup dan alamatnya benar.",
+    "Error_TransferFailed":"Transfer putus di tengah jalan.",
+    "Error_PasswordRequestFailed":"Server uji meminta autentikasi.",
+    "Error_LoginFailed":"Kredensial ke server uji ditolak.",
+    "Error_IncorrectSize":"Ukuran data tidak sesuai.",
+    "Error_Timeout":"ONU kehabisan waktu. Untuk unggah, cek modul DAV nginx sudah aktif.",
+    "Error_Internal":"Kesalahan internal di ONU.",
+    "Error_Other":"ONU melaporkan kegagalan tanpa rincian."
+  };
+
+  function runPhase(d, dir){
+    var D = DIR[dir], root = rootOf(d), base = D.node(root), tag = D.tag();
+    activeBase = base;
+    applyAccent(COLOR[dir]);
+    el("glow").classList.remove("lit");
+    paint(0);
+    el("readNum").textContent = "—";
+    el("readUnit").textContent = D.unit;
+    el("results").hidden = false;
+    el(dir === "down" ? "resDown" : "resUp").classList.add("active");
+    startSweep();
+
+    var began = Date.now(), tsBefore = 0;
+    log("── " + D.label + " ──", "h");
+    log("Node: " + base);
+
+    clearInterval(tickTimer);
+    tickTimer = setInterval(function(){
+      if (!running) return;
+      el("readCap").textContent = "mengukur · " + Math.round((Date.now()-began)/1000) + " detik";
+    }, 500);
+
+    return nbi("/devices/?query=" + q({_id:d._id}) + "&projection=" + encodeURIComponent(base))
+      .then(function(r){
+        var dev = r && r[0];
+        var before = val(dev, base + ".DiagnosticsState");
+        tsBefore = parseTime(stampOf(dev, base + ".DiagnosticsState")) || 0;
+        log("Kondisi awal: " + (before || "belum ada"));
+        return nbi(devPath(d._id) + "/tags/" + encodeURIComponent(tag), {method:"POST"});
+      })
+      .then(function(){
+        status("Membangunkan ONU untuk uji " + D.label.toLowerCase() + "…");
+        return nbi(devPath(d._id) + "/tasks?timeout=20000&connection_request", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ name:"refreshObject", objectName: root + ".DeviceInfo" })
+        });
+      })
+      .then(function(){
+        log("Perintah uji dikirim.", "s");
+        status("ONU sedang " + D.verb + " data uji.");
+        return waitResult(d, base, tsBefore, began, D, dir);
+      })
+      .catch(function(err){
+        clearInterval(tickTimer);
+        if (err.message === "Sesi berakhir") return { ok:false, cancelled:true };
+        log("Gagal memulai " + D.label.toLowerCase() + ": " + err.message, "e");
+        addRow(dir, "gagal memulai", null, null, null);
+        return { ok:false, fatal:true,
+                 msg:"Tidak bisa memulai uji " + D.label.toLowerCase() + ". " + err.message };
+      });
+  }
+
+  function waitResult(d, base, tsBefore, began, D, dir){
+    var deadline = began + cfg.timeout*1000;
+    return new Promise(function(resolve){
+      function round(){
+        if (!running){ clearInterval(tickTimer); resolve({ok:false, cancelled:true}); return; }
+        if (Date.now() > deadline){
+          clearInterval(tickTimer);
+          log("Batas tunggu " + cfg.timeout + " detik terlampaui.", "e");
+          addRow(dir, "kehabisan waktu", null, null, null);
+          resolve({ ok:false, msg:"ONU tidak melaporkan hasil " + D.label.toLowerCase() +
+                   " dalam " + cfg.timeout + " detik." });
+          return;
+        }
+        nbi("/devices/?query=" + q({_id:d._id}) + "&projection=" + encodeURIComponent(base))
+          .then(function(r){
+            if (!running){ clearInterval(tickTimer); resolve({ok:false, cancelled:true}); return; }
+            var dev = r && r[0];
+            var st = val(dev, base + ".DiagnosticsState");
+            var ts = parseTime(stampOf(dev, base + ".DiagnosticsState")) || 0;
+            if (st && ts > tsBefore){
+              clearInterval(tickTimer);
+              // FiberHome membalas "Completed", standarnya "Complete" — terima keduanya
+              if (/^complete/i.test(st)){ resolve(measure(dev, base, D, dir, st)); return; }
+              if (/^error/i.test(st)){
+                log("ONU melaporkan " + st, "e");
+                addRow(dir, st, null, null, null);
+                resolve({ ok:false, msg:"<b>"+st+"</b> — " +
+                         (ERRORS[st] || "Periksa parameter diagnostik di GenieACS.") });
+                return;
+              }
+            }
+            pollTimer = setTimeout(round, 2500);
+          })
+          .catch(function(err){
+            if (err.message === "Sesi berakhir"){ resolve({ok:false, cancelled:true}); return; }
+            log("Pembacaan gagal: " + err.message, "e");
+            pollTimer = setTimeout(round, 3500);
+          });
+      }
+      pollTimer = setTimeout(round, 3000);
+    });
+  }
+
+  function measure(dev, base, D, dir, rawState){
+    var bom = parseTime(val(dev, base + ".BOMTime"));
+    var eom = parseTime(val(dev, base + ".EOMTime"));
+    var bytes = null;
+    for (var i=0;i<D.bytes.length;i++){
+      var v = val(dev, base + "." + D.bytes[i]);
+      if (v != null && v > 0){ bytes = v; log("Volume dari " + D.bytes[i]); break; }
+    }
+    var total = val(dev, base + "." + D.total);
+    if (!bom || !eom || !bytes || eom <= bom){
+      log("Selesai, tapi stempel waktu tidak wajar.", "e");
+      addRow(dir, rawState, bytes, null, null);
+      return { ok:false, msg:"ONU melapor <b>"+rawState+"</b> untuk " + D.label.toLowerCase() +
+               ", tapi BOMTime/EOMTime tidak terisi wajar jadi kecepatan tidak bisa dihitung." };
+    }
+    var secs = (eom-bom)/1000, mbps = (bytes*8)/secs/1e6;
+    log(D.label + " selesai: " + mbps.toFixed(2) + " Mbps", "s");
+    addRow(dir, rawState, bytes, secs, mbps);
+    return { ok:true, mbps:mbps, bytes:bytes, total:total, secs:secs, state:rawState };
+  }
+
+  function addRow(dir, state, bytes, secs, mbps){
+    var tb = el("detailBody"), tr = document.createElement("tr");
+    function td(text, cls){
+      var c = document.createElement("td");
+      if (cls) c.className = cls;
+      c.textContent = text;
+      return c;
+    }
+    tr.appendChild(td(DIR[dir].label, "dir " + dir));
+    tr.appendChild(td(state || "—", mbps == null ? "fail" : ""));
+    tr.appendChild(td(fmtBytes(bytes)));
+    tr.appendChild(td(secs == null ? "—" : secs.toFixed(2) + " s"));
+    tr.appendChild(td(mbps == null ? "—" : mbps.toFixed(2) + " Mbps"));
+    tb.appendChild(tr);
+    el("detail").hidden = false;
+  }
+
+  el("goBtn").addEventListener("click", function(){ if (!running && selected) run(selected); });
+
+  function abortDiagnostics(d, base){
+    if (!base) return;
+    log("Mengirim perintah batal ke ONU…");
+    // TR-069 Annex A: mengubah DiagnosticsState saat uji berjalan menghentikan uji.
+    nbi(devPath(d._id) + "/tasks?timeout=20000&connection_request", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        name:"setParameterValues",
+        parameterValues: [[base + ".DiagnosticsState", "None", "xsd:string"]]
+      })
+    })
+    .then(function(){ log("ONU menerima perintah batal.", "s"); })
+    .catch(function(err){
+      log("ONU menolak perintah batal: " + err.message, "e");
+      log("Transfer kemungkinan tetap jalan sampai selesai sendiri.", "e");
+    });
+  }
+
+  el("stopBtn").addEventListener("click", function(){
+    if (!running) return;
+    var d = selected, base = activeBase;
+    running = false;
+    clearTimeout(pollTimer); clearTimeout(gapTimer); clearInterval(tickTimer);
+    log("Dibatalkan oleh operator.", "e");
+    status("Menghentikan uji di ONU…", "warn");
+    stopSweep(); paint(0);
+    el("readNum").textContent = "—";
+    el("readCap").textContent = "dibatalkan";
+    idle();
+    if (d){
+      abortDiagnostics(d, base);
+      cleanupTags(d);
+      status("Uji dihentikan dan perintah batal dikirim ke ONU. " +
+             "Sebagian ONU tetap menyelesaikan transfernya — pantau trafik kalau ragu.", "warn");
+    }
+  });
+
+  function idle(){
+    running = false;
+    activeBase = null;
+    stopSweep();
+    clearTimeout(pollTimer); clearTimeout(gapTimer); clearInterval(tickTimer);
+    el("goBtn").disabled = false;
+    el("goBtn").textContent = "Mulai uji";
+    el("stopBtn").hidden = true;
+    ["modeBoth","modeDown","modeUp"].forEach(function(i){ el(i).disabled = false; });
+    el("resDown").classList.remove("active");
+    el("resUp").classList.remove("active");
+  }
+
+  function run(d){
+    running = true;
+    resetAll();
+    el("log").innerHTML = "";
+    el("goBtn").disabled = true;
+    el("goBtn").textContent = "Sedang menguji…";
+    el("stopBtn").hidden = false;
+    ["modeBoth","modeDown","modeUp"].forEach(function(i){ el(i).disabled = true; });
+
+    log("Target " + d._id);
+    var seq = phases(), results = {}, problems = [];
+
+    function next(i){
+      if (!running || i >= seq.length) return Promise.resolve();
+      var dir = seq[i];
+      return runPhase(d, dir).then(function(res){
+        if (res.cancelled) return;
+        var cell = el(dir === "down" ? "resDown" : "resUp");
+        var valEl = el(dir === "down" ? "resDownV" : "resUpV");
+        cell.classList.remove("active");
+        if (res.ok){
+          results[dir] = res;
+          cell.classList.add("filled");
+          valEl.innerHTML = (res.mbps >= 100 ? res.mbps.toFixed(0) : res.mbps.toFixed(1)) +
+                            '<small>Mbps</small>';
+          el("readCap").textContent = fmtBytes(res.bytes) + " dalam " + res.secs.toFixed(2) + " detik";
+          settleTo(res.mbps);
+        } else {
+          problems.push(res.msg || "Uji " + DIR[dir].label.toLowerCase() + " gagal.");
+          cell.classList.add("filled");
+          valEl.innerHTML = '<small style="margin:0">gagal</small>';
+          stopSweep(); paint(0);
+          el("readNum").textContent = "—";
+          el("readCap").textContent = "gagal";
+        }
+        if (i+1 < seq.length && running){
+          status("Uji " + DIR[dir].label.toLowerCase() + " selesai. Lanjut " +
+                 DIR[seq[i+1]].label.toLowerCase() + " dalam " + cfg.gap + " detik…");
+          log("Jeda " + cfg.gap + " detik sebelum arah berikutnya.");
+          return sleep(cfg.gap*1000).then(function(){ return next(i+1); });
+        }
+        return next(i+1);
+      });
+    }
+
+    next(0).then(function(){
+      if (!running) return;
+      var done = Object.keys(results);
+      if (!done.length){
+        status(problems.join("<br>") || "Uji tidak menghasilkan apa-apa.", "err");
+      } else if (problems.length){
+        status("Sebagian selesai.<br>" + problems.join("<br>"), "warn");
+      } else if (done.length === 2){
+        status("Uji selesai. Rasio unduh terhadap unggah " +
+               (results.down.mbps / results.up.mbps).toFixed(1) + ":1.");
+      } else {
+        var only = results[done[0]], note = "Uji selesai.";
+        if (only.secs < 5) note += " Durasi hanya " + only.secs.toFixed(1) +
+          " detik — perbesar data uji supaya tidak terpengaruh TCP slow start.";
+        status(note);
+      }
+      cleanupTags(d);
+      idle();
+    });
+  }
+
+  function cleanupTags(d){
+    [cfg.tag, cfg.tagUp, cfg.wait].forEach(function(t){
+      nbi(devPath(d._id) + "/tags/" + encodeURIComponent(t), {method:"DELETE"}).catch(function(){});
+    });
+    log("Tag dilepas.");
+  }
+
+})();
+</script>
+</body>
+</html>
